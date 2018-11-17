@@ -1,7 +1,6 @@
 %% Part 2 - Brandon Best
-load('walk2.mat');
+load('walk1.mat');
 load('human_data.mat');
-addpath('/cshome/vis/data');
 
 
 
@@ -20,8 +19,8 @@ for i=1:length(L)
     angleL = invKin3D(Ml,theta,L(:,i));
     angleR = invKin3D(Mr,theta,R(:,i));
     output = humanInterp(drad,[angleL;angleR]);
-    robot3D(output);
-    pause(0.05);
+    robot3D(out);
+%     stick3D([angleL,angleR]);
 end
 
 function [pos,J] = evalRobot3D(M,theta)
@@ -58,8 +57,10 @@ function angles = invKin3D(M,theta,pos)
 % Newton Method
     [p,J] = evalRobot3D(M,theta);
     x = theta;
-    for i=1:50
+    limit = norm(p-pos);
+    while(limit >= 1)
         f = p - pos;
+        limit = norm(f);
         s = -J\f;
         x = x + s;
         [p,J] = evalRobot3D(M,x);

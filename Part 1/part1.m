@@ -13,9 +13,9 @@ J2 = fdJacob2D(links,theta,a);
 
 % plotRobot2D(links,theta);
 
-% testInvKin();
+testInvKin(10);
 
-function testInvKin()
+function testInvKin(n)
     ls = [0.5,0.5]';
     t = rand(2,1);
     clf;

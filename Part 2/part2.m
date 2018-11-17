@@ -9,56 +9,70 @@ addpath('/cshome/vis/data');
 M{1,1} = [0.939692000000000,-0.342021000000000,1.06330000000000e-07,0.133632000000000;0.342020000000000,0.939693000000000,-4.99153000000000e-08,-0.175942000000000;-8.28458000000000e-08,8.32722000000000e-08,1,0.0822827000000000;0,0,0,1];
 M{1,2} = [1,-7.79704000000000e-17,-2.10284000000000e-08,-1.56828000000000e-06;7.79704000000000e-17,1,1.86594000000000e-15,-0.606984000000000;2.10284000000000e-08,-1.86594000000000e-15,1,5.96046000000000e-07;0,0,0,1];
 M{1,3} = [1,6.18174000000000e-08,4.15020000000000e-07,-1.99659000000000e-06;-4.15020000000000e-07,-7.54979000000000e-08,1,-0.553825000000000;6.18174000000000e-08,-1,-7.54979000000000e-08,6.55651000000000e-07;0,0,0,1];
-theta = [200,10,10,10]';
+theta = [0,0,0,0]';
 
 
 [pos,J] = evalRobot3D(M,theta);
 % disp(pos);
 % disp(J);
+
 robot3D('new');
 for i=1:length(L)
     angleL = invKin3D(Ml,theta,L(:,i));
     angleR = invKin3D(Mr,theta,R(:,i));
     output = humanInterp(drad,[angleL;angleR]);
     robot3D(output);
-    pause(0.05);
+    pause(0.2);
+   %stick3D([angleL,angleR]);
 end
 
 function [pos,J] = evalRobot3D(M,theta)
-    Rz = [1 0 0 0;...
-        0 cos(theta(3)) -sin(theta(3)) 0;...
-        0 sin(theta(3)) cos(theta(3)) 0;...
-        0 0 0 1];
-    Ry = [cos(theta(2)) 0 sin(theta(2)) 0;...
-        0 1 0 0;...
-        -sin(theta(2)) 0 cos(theta(2)) 0;...
-        0 0 0 1];
-    
-    Rx = [cos(theta(1)) -sin(theta(1)) 0 0;...
-        sin(theta(1)) cos(theta(1)) 0 0;...
-        0 0 1 0;...
-        0 0 0 1];
-    RX = [cos(theta(4)) -sin(theta(4)) 0 0;...
-        sin(theta(4)) cos(theta(4)) 0 0;...
-        0 0 1 0;...
-        0 0 0 1];
-    pos = M{1,1}*Rz*Ry*Rx*M{1,2}*RX*M{1,3}*[0 0 0 1]';
-    P0 = M{1,1}*Rz*[0 0 0 1]';
+    pos = M{1,1}*RotationZ(theta(3))*RotationY(theta(2))*RotationX(theta(1))*M{1,2}*RotationX(theta(4))*M{1,3}*[0 0 0 1]';
+    P0 = M{1,1}*RotationZ(0)*RotationY(0)*RotationX(20)*M{1,2}*RotationX(0)*M{1,3}*[0 0 0 1]';
     P0 = P0(1:3,1);
-    P1 = M{1,1}*Rz*Ry*[0 0 0 1]';
+    P1 = M{1,1}*RotationZ(0)*RotationY(20)*RotationX(0)*M{1,2}*RotationX(0)*M{1,3}*[0 0 0 1]';
     P1 = P1(1:3,1);
-    P2 = M{1,1}*Rz*Ry*Rx*M{1,2}*[0 0 0 1]';
+    P2 = M{1,1}*RotationZ(20)*RotationY(0)*RotationX(0)*M{1,2}*RotationX(0)*M{1,3}*[0 0 0 1]';
     P2 = P2(1:3,1);
+    P3 = M{1,1}*RotationZ(0)*RotationY(0)*RotationX(0)*M{1,2}*RotationX(20)*M{1,3}*[0 0 0 1]';
+    P3 = P3(1:3,1);
     pos = pos(1:3,1);
-    J = [P0 P1 P2 pos];
+    
+    J0 = (pos-P0)./20;
+    J1 = (pos-P1)./20;
+    J2 = (pos-P2)./20;
+    J3 = (pos-P3)./20;
+    
+    J = [J0 J1 J2 J3];
 
+end
+
+function Rz = RotationZ(theta)
+ Rz = [1 0 0 0;...
+        0 cos(theta) -sin(theta) 0;...
+        0 sin(theta) cos(theta) 0;...
+        0 0 0 1];
+end
+
+function Ry = RotationY(theta)
+ Ry = [cos(theta) 0 sin(theta) 0;...
+        0 1 0 0;...
+        -sin(theta) 0 cos(theta) 0;...
+        0 0 0 1];
+end
+
+function Rx = RotationX(theta)
+    Rx = [cos(theta) -sin(theta) 0 0;...
+        sin(theta) cos(theta) 0 0;...
+        0 0 1 0;...
+        0 0 0 1];
 end
 
 function angles = invKin3D(M,theta,pos)
 % Newton Method
     [p,J] = evalRobot3D(M,theta);
     x = theta;
-    for i=1:50
+    for i=1:20
         f = p - pos;
         s = -J\f;
         x = x + s;
